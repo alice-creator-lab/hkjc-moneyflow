@@ -1,0 +1,17 @@
+# 執行時資料（唔入 repo：DB、快照、賠率記錄）
+data/
+logs/
+*.pid
+
+# GitHub Pages 快照工作副本（本身係另一個 repo：moneyflow-monitor）
+.pages/
+
+# 本機二進位（cloudflared，見 README「即時版」一節自行下載）
+bin/
+
+# Python
+__pycache__/
+*.pyc
+
+# 系統
+.DS_Store
