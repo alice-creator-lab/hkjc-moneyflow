@@ -13,6 +13,12 @@ if [ -f "$DIR/config.env" ]; then
 fi
 PYTHON="${PYTHON:-python3}"
 
+# Manual pause switch: `touch data/.nopush` stops publishing (collection keeps running);
+# `rm data/.nopush` resumes on the next cron tick.
+if [ -f "$DIR/data/.nopush" ]; then
+  exit 0
+fi
+
 cd "$DIR" || exit 1
 
 BEFORE="$(sha256sum .pages/data.js 2>/dev/null | cut -d' ' -f1)"

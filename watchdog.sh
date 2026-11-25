@@ -27,6 +27,16 @@ for f in "$DIR/logs/collector.log" "$DIR/logs/daemon.out" "$DIR/logs/mqtt.log" "
 done
 
 # ---------------------------------------------------------------- collector
+# User pause switch: `touch data/.nocollect` stops collection (the running daemon exits by itself);
+# the watchdog must not start or stale-restart it while the flag is present. The webapp and tunnel
+# below keep running so the page still shows the last data. `rm data/.nocollect` resumes.
+if [ -f "$DIR/data/.nocollect" ]; then
+  if [ ! -f "$DIR/data/.collect_held" ]; then
+    : >"$DIR/data/.collect_held"
+    say "collection paused (data/.nocollect present) - not starting the collector"
+  fi
+else
+rm -f "$DIR/data/.collect_held"
 mapfile -t PIDS < <(pgrep -f "python3? .*collect\.py --daemon$" 2>/dev/null | sort -n)
 COUNT=${#PIDS[@]}
 
@@ -67,6 +77,7 @@ if [ -n "${AGE:-}" ] && [ "$AGE" -gt 30 ]; then
   pgrep -f "collect\.py --daemon" | tail -1 >"$DIR/data/collector.pid" 2>/dev/null
   say "collector restarted pid=$(cat "$DIR/data/collector.pid" 2>/dev/null)"
 fi
+fi   # end of collection-paused guard
 
 # ------------------------------------------------------------------ webapp
 mapfile -t WEBPIDS < <(pgrep -f "python3? .*serve\.py --port 8787" 2>/dev/null | sort -n)

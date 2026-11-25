@@ -1073,6 +1073,12 @@ def daemon(extra_targets: list[tuple[str, str]] | None) -> None:
     signal.signal(signal.SIGINT, handle)
     last_purge = 0.0
     while not stop["flag"]:
+        # User pause switch: `touch data/.nocollect` stops collection for good; the flag is kept
+        # (unlike `.stop`) so the watchdog will not restart us until it is removed.
+        if (DATA / ".nocollect").exists():
+            mqtt_stop()
+            log("collect pause file present -> shutting down (rm data/.nocollect to resume)")
+            break
         try:
             if time.time() - last_purge > 6 * 3600:      # keep only the last 2 days of past meetings
                 try:
@@ -1108,6 +1114,11 @@ def daemon(extra_targets: list[tuple[str, str]] | None) -> None:
             log(f"cycle done in {elapsed:.1f}s ({why}); sleeping {sleep_for:.0f}s")
             deadline = time.time() + sleep_for
             while time.time() < deadline and not stop["flag"]:
+                if (DATA / ".nocollect").exists():
+                    mqtt_stop()
+                    log("collect pause file seen -> shutting down")
+                    stop["flag"] = True
+                    break
                 if (DATA / ".stop").exists():
                     (DATA / ".stop").unlink(missing_ok=True)
                     stop["flag"] = True
